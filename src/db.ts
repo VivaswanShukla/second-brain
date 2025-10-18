@@ -10,3 +10,19 @@ const UserSchema = new Schema({
 })
 
 export const UserModel = model('User', UserSchema);
+
+const ContentPostSchema = new Schema({
+    type: String,
+    link: String,
+    title: String,
+    tags:[{
+        type: mongoose.Types.ObjectId,
+        ref: 'Tag'
+    }],
+    userId: {
+        type: mongoose.Types.ObjectId,
+        ref: 'User'
+    }
+})
+
+export const ContentModel = model('Content', ContentPostSchema);

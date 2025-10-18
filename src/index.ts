@@ -1,22 +1,23 @@
 import express from "express";
-import { UserModel } from "./db.js";
 import jwt from "jsonwebtoken";
-const app = express();
+import { JWT_SECRET } from "./config.js";
+import { UserModel } from "./db.js";
+import { ContentModel } from "./db.js";
+import { userMiddleware } from "./middleware.js";
 
-const JWT_SECRET = "atmkbfjg";
+const app = express();
 const PORT = 3000;
 app.use(express.json());
 app.post("/api/v1/signup", async (req, res) => {
 
     // ToDo: Implement zod validation and hash password
 
-    const username = req.body.username;
-    const password = req.body.password;
+    const {username,password} = req.body;
 
         try{
             await UserModel.create({
-                username: username,
-                password: password
+                username,
+                password
             })
             res.json({
                 message: "User Signed Up"
@@ -53,16 +54,48 @@ app.post("/api/v1/signin", async (req, res) => {
     }
 })
 
-app.post("/api/v1/content", (req, res) => {
+app.post("/api/v1/content", userMiddleware, async (req, res) => {
+    const { type, link, title } = req.body;
+
+    await ContentModel.create({
+        type,
+        link,
+        title,
+        // @ts-ignore
+        userId: req.userId,
+        tag: []
+    })
+    res.json({
+        message: "Content Created"
+    })
 
 })
 
-app.get("/api/v1/content", (req, res) => {
-    
+app.get("/api/v1/content",userMiddleware, async (req, res) => {
+    // @ts-ignore
+    const userId = req.userId;
+    const content = await ContentModel.find({
+        userId
+    }).populate("userId", "username")
+    res.json({
+        content
+    })
 })
 
-app.delete("/api/v1/content", (req, res) => {
-    
+
+app.delete("/api/v1/content",userMiddleware, async (req, res) => {
+    // @ts-ignore
+    const userId =  req.userId
+    const {contentId} = req.body;
+    console.log("🚀 ~ contentId:", contentId)
+
+    await ContentModel.deleteOne({
+        _id: contentId,
+        userId
+    })
+    res.json({
+        message: "Deleted"
+    })
 })
 
 app.listen(PORT, () => {
