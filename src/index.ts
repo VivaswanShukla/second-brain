@@ -1,9 +1,10 @@
 import express from "express";
 import jwt from "jsonwebtoken";
 import { JWT_SECRET } from "./config.js";
-import { UserModel } from "./db.js";
+import { LinkModel, UserModel } from "./db.js";
 import { ContentModel } from "./db.js";
 import { userMiddleware } from "./middleware.js";
+import { random } from "./utils.js";
 
 const app = express();
 const PORT = 3000;
@@ -95,6 +96,73 @@ app.delete("/api/v1/content",userMiddleware, async (req, res) => {
     })
     res.json({
         message: "Deleted"
+    })
+})
+
+app.post("/api/v1/brain/share",userMiddleware, async (req, res) => {
+    const { share } = req.body;
+    if(share){
+        const existingLink = await LinkModel.findOne({
+            // @ts-ignore
+            userId: req.userId
+        })
+        if(existingLink){
+            res.json({
+                hash: existingLink.hash
+            })
+            return;
+        }
+        const hash =  random(10);
+        await LinkModel.create({
+            // @ts-ignore
+            userId: req.userId,
+            hash
+    })
+    res.json({
+        message: hash
+    })
+    }else{
+        await LinkModel.deleteOne({
+            // @ts-ignore
+            userId: req.userId
+        })
+        res.json({
+            message: "Deleted shareable link"
+        })
+    }
+})
+
+app.get("/api/v1/brain/:sharableLink", async (req, res) => {
+    const hash = req.params.sharableLink;
+
+    const link = await LinkModel.findOne({
+        hash
+    })
+    if(!link){
+        res.status(411).json({
+            message: "Wrong Link/ROute"
+        })
+        return;
+    }
+
+    const content = await ContentModel.find({
+        userId: link.userId
+    })
+
+    const user = await UserModel.findOne({
+        _id: link.userId
+    })
+
+    if(!user){
+        res.status(411).json({
+            message: "User does not exist"
+        })
+        return;
+    }
+
+    res.json({
+        username:user.username,
+        content:content
     })
 })
 

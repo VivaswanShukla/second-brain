@@ -8,8 +8,8 @@ const UserSchema = new Schema({
     },
     password: String
 })
-
 export const UserModel = model('User', UserSchema);
+
 
 const ContentPostSchema = new Schema({
     type: String,
@@ -24,5 +24,15 @@ const ContentPostSchema = new Schema({
         ref: 'User'
     }
 })
-
 export const ContentModel = model('Content', ContentPostSchema);
+
+
+const LinkSchema = new Schema({
+    hash: String,
+    userId: {
+        type: mongoose.Types.ObjectId,
+        ref: 'User',
+        unique: true
+    }
+})
+export const LinkModel = model('Link', LinkSchema);
